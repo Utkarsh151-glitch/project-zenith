@@ -6,6 +6,7 @@ versioned router for the public API surface.
 
 from fastapi import APIRouter
 
+from app.routers.dashboard import router as dashboard_router
 from app.routers.health import router as health_router
 from app.routers.iss import router as iss_router
 from app.routers.planets import router as planets_router
@@ -17,6 +18,9 @@ api_router = APIRouter(prefix="/api/v1")
 
 # Health endpoints live under `/api/v1` and contain no business logic.
 api_router.include_router(health_router)
+
+# Dashboard endpoint orchestrates provider data into one observation report.
+api_router.include_router(dashboard_router)
 
 # ISS endpoints expose live International Space Station telemetry.
 api_router.include_router(iss_router)
