@@ -13,7 +13,7 @@ router = APIRouter(prefix="/satellites", tags=["satellites"])
 
 def get_satellite_service() -> SatelliteService:
     """Create the satellite service dependency."""
-    return SatelliteService(base_url=settings.CELESTRAK_URL)
+    return SatelliteService(base_url=settings.CELESTRAK_URL, fallback_url=settings.ALT_TLE_URL)
 
 
 @router.get(

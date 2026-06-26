@@ -9,6 +9,7 @@ from fastapi import APIRouter
 from app.routers.dashboard import router as dashboard_router
 from app.routers.health import router as health_router
 from app.routers.iss import router as iss_router
+from app.routers.narrator import router as narrator_router
 from app.routers.planets import router as planets_router
 from app.routers.satellites import router as satellites_router
 from app.routers.weather import router as weather_router
@@ -29,3 +30,4 @@ api_router.include_router(iss_router)
 api_router.include_router(weather_router)
 api_router.include_router(satellites_router)
 api_router.include_router(planets_router)
+api_router.include_router(narrator_router)

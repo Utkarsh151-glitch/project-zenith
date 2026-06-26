@@ -17,7 +17,7 @@ router = APIRouter(prefix="/iss", tags=["iss"])
 
 def get_iss_service() -> ISSService:
     """Create the ISS service dependency."""
-    return ISSService(base_url=settings.OPEN_NOTIFY_URL)
+    return ISSService(base_url=settings.OPEN_NOTIFY_URL, fallback_url=settings.WHERE_THE_ISS_URL)
 
 
 @router.get(

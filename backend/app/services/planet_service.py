@@ -59,12 +59,15 @@ class PlanetService:
         future Time Travel feature can reuse this data-access path.
         """
         timestamp_utc = timestamp.astimezone(timezone.utc).replace(microsecond=0)
-        positions = await asyncio.gather(
-            *[self._fetch_position(target, timestamp_utc) for target in self.TARGETS]
-        )
+        # NASA Horizons rate-limits concurrent requests from one IP (returning
+        # 503), so the bodies are fetched sequentially rather than via gather.
+        positions = [
+            await self._fetch_position(target, timestamp_utc)
+            for target in self.TARGETS
+        ]
         return PlanetPositions(
             timestamp_utc=timestamp_utc.isoformat(),
-            positions=list(positions),
+            positions=positions,
         )
 
     async def _fetch_position(
@@ -75,17 +78,24 @@ class PlanetService:
         """Fetch one body vector from NASA Horizons."""
         params = self._build_vector_params(target, timestamp_utc)
 
-        try:
-            async with httpx.AsyncClient(timeout=self._timeout_seconds) as client:
-                response = await client.get(self._endpoint, params=params)
-                response.raise_for_status()
-        except httpx.HTTPError as exc:
-            logger.warning(
-                "Failed to fetch Horizons vector",
-                extra={"target": target.name, "target_id": target.target_id},
-                exc_info=exc,
-            )
-            raise PlanetServiceError("Unable to fetch planetary position data.") from exc
+        response = None
+        for attempt in range(3):
+            try:
+                async with httpx.AsyncClient(timeout=self._timeout_seconds) as client:
+                    response = await client.get(self._endpoint, params=params)
+                    response.raise_for_status()
+                break
+            except httpx.HTTPError as exc:
+                # Horizons returns transient 503s under load; retry with backoff.
+                if attempt < 2:
+                    await asyncio.sleep(0.6 * (attempt + 1))
+                    continue
+                logger.warning(
+                    "Failed to fetch Horizons vector",
+                    extra={"target": target.name, "target_id": target.target_id},
+                    exc_info=exc,
+                )
+                raise PlanetServiceError("Unable to fetch planetary position data.") from exc
 
         try:
             payload = response.json()
@@ -106,18 +116,24 @@ class PlanetService:
     ) -> dict[str, str]:
         """Build Horizons vector-table parameters for one target body."""
         stop_time = timestamp_utc + timedelta(minutes=1)
+        # NASA Horizons rejects unquoted values that contain spaces (e.g. the
+        # date/time and step size) with an "INPUT ERROR ... Too many constants"
+        # message, so every value below is single-quoted as the API requires.
         return {
             "format": "json",
-            "COMMAND": target.target_id,
+            "COMMAND": f"'{target.target_id}'",
             "OBJ_DATA": "NO",
             "MAKE_EPHEM": "YES",
             "EPHEM_TYPE": "VECTORS",
-            "CENTER": "500@399",
-            "START_TIME": timestamp_utc.strftime("%Y-%b-%d %H:%M"),
-            "STOP_TIME": stop_time.strftime("%Y-%b-%d %H:%M"),
-            "STEP_SIZE": "1 m",
+            "CENTER": "'500@399'",
+            "START_TIME": f"'{timestamp_utc.strftime('%Y-%b-%d %H:%M')}'",
+            "STOP_TIME": f"'{stop_time.strftime('%Y-%b-%d %H:%M')}'",
+            "STEP_SIZE": "'1 m'",
             "CSV_FORMAT": "YES",
-            "VEC_TABLE": "2",
+            # VEC_TABLE=3 appends range (RG) at CSV column index 9, which the
+            # parser reads as distance; OUT_UNITS returns AU to match the schema.
+            "VEC_TABLE": "3",
+            "OUT_UNITS": "'AU-D'",
             "REF_PLANE": "ECLIPTIC",
         }
 

@@ -5,6 +5,7 @@ from app.config import settings
 from app.core.middleware import LoggingMiddleware, RequestIDMiddleware
 from app.exceptions.handlers import register_exception_handlers
 from app.routers.api import api_router
+from app.routers.narrator import router as narrator_router
 
 
 app = FastAPI(
@@ -28,3 +29,4 @@ app.add_middleware(LoggingMiddleware)
 # Register global exception handlers before exposing versioned API routes.
 register_exception_handlers(app)
 app.include_router(api_router)
+app.include_router(narrator_router, prefix="/api")
