@@ -70,7 +70,7 @@ interface LiveISS {
 
 export async function getISSPosition(): Promise<ISSPosition> {
   try {
-    const raw = await fetchJSON<APIResponse<LiveISS> | LiveISS>(`${V1}/iss/live`);
+    const raw = await fetchJSON<APIResponse<LiveISS> | LiveISS>(`${V1}/iss/live`, undefined, 9000);
     const d = unwrap<LiveISS>(raw);
     apiStatus.lastSourceLive = true;
     return {

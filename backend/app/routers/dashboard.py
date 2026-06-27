@@ -43,7 +43,7 @@ def get_iss_service() -> ISSService:
 
 def get_satellite_service() -> SatelliteService:
     """Create the satellite catalog provider dependency."""
-    return SatelliteService(base_url=settings.CELESTRAK_URL)
+    return SatelliteService(base_url=settings.CELESTRAK_URL, fallback_url=settings.ALT_TLE_URL)
 
 
 def get_planet_service() -> PlanetService:
