@@ -2,6 +2,10 @@
 
 Project Zenith is a full-stack AI-powered digital observatory. The application combines a FastAPI astronomy backend with a Next.js immersive frontend for live ISS tracking, weather-aware observation scoring, satellite data, planetary position services, and a Gemini-powered cosmic narrator.
 
+**Live demo:** https://project-zenith-eight-mauve.vercel.app (frontend on Vercel, API on Render at `https://project-zenith-backend.onrender.com`; the free Render instance can take up to a minute to wake)
+
+![Project Zenith landing page](docs/screenshots/home.png)
+
 The project is structured as a monorepo:
 
 ```text
@@ -164,7 +168,8 @@ GET  /api/v1/health
 GET  /api/v1/iss/live
 GET  /api/v1/weather/current?latitude=28.6139&longitude=77.2090
 GET  /api/v1/satellites/active
-GET  /api/v1/planets/positions
+GET  /api/v1/planets/current
+GET  /api/v1/dashboard?latitude=28.6139&longitude=77.2090
 POST /api/v1/narrator/ask
 POST /api/narrator/ask
 ```
@@ -307,3 +312,6 @@ The repository includes only example environment files and source code.
 ## Team
 
 Built for ASTRALWEB'26 by Team DO BRONXS.
+
+- **Utkarsh Vaibhav:** Next.js frontend (pages; 3D scenes with Three.js / React Three Fiber; Cesium globe; sky map, events and narrator UI; typed API client with mock-data fallback), deployment setup for Vercel and Render, and hardening of the live ISS service.
+- **Soham Gupta:** FastAPI backend architecture and the astronomy engine (orbital propagation, visibility, zenith ranking) plus the observation dashboard pipeline.
